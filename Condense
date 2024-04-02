@@ -1,1 +1,123 @@
+# This proof-of-concept python program translates the MIDAS GHG values into a condensed form
 
+
+import requests, json, base64, datetime, time
+from decimal import Decimal
+import getpass
+import sys
+
+username = input("User Name: ")
+password = getpass.getpass(prompt="Password: ")
+rininput = input("RIN: ")
+interval = int(input("Interval (minutes): "))
+numbervalues = int(input("Number of Values: "))
+
+#Function passes through your MIDAS username and password as strings and returns the JWT token as a string
+def GetToken(username, password):
+    credentials = username + ":" + password
+    credentials_encodedBytes = base64.b64encode(credentials.encode("utf-8"))
+   
+    headers = {b'Authorization': b'BASIC ' + credentials_encodedBytes}
+    url = 'https://midasapi.energy.ca.gov/api/token'
+
+    response = requests.get(url,headers=headers)
+    print(response.text)
+
+    return response.headers['Token']
+
+token=GetToken(username, password)
+
+#Query passes in JWT access token as "token", Rate Identification Number (RIN) as rateID formatted as a string, and "alldata" or "realtime" for queryType formatted as a string
+def GetValue(token, rateID, queryType):
+    headers = {'accept': 'application/json', 'Authorization': "Bearer " + token}
+    url = 'https://midasapi.energy.ca.gov/api/valuedata?id=' + rateID + '&querytype=' + queryType
+    pricing_response = requests.get(url, headers=headers)
+    print(pricing_response)
+    return (pricing_response.text)
+
+messagelength = 0
+
+timeforfile = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+
+ghg=GetValue(token, rininput, "realtime")
+
+top_info = json.loads(ghg)
+
+print("\nMIDAS Condensed Message\n----------")
+RIN = top_info["RateID"]
+RIN1 = RIN[0:RIN.find('-')]
+RINa = RIN[RIN.find('-')+1:]
+RIN2 = RINa[0:RINa.find('-')]
+RINb = RINa[RINa.find('-')+1:]
+RIN3 = RINb[0:RINb.find('-')]
+RINc = RINb[RINb.find('-')+1:]
+RIN4 = RINc[RINc.find('-')+1:]
+
+rininputshort = RIN1 + RIN2 + RIN3 + RIN4
+
+print("RIN = " + rininputshort)
+ghgBroadcast = rininputshort  + ","
+messagelength = len(rininputshort) + 1
+
+fileptr = open ("ghg_" + rininputshort + "_" + timeforfile + ".txt", "w");
+fileptr.write(ghg)
+fileptr.close()
+
+print("Message Type = 2")
+ghgBroadcast = ghgBroadcast + "2" + ","
+messagelength = messagelength + 1
+
+systemtime = top_info["SystemTime_UTC"]
+
+posperiod = systemtime.find('.')
+shortsystemtime = systemtime[0:posperiod]
+
+presenttime = datetime.datetime.strptime(shortsystemtime, '%Y-%m-%dT%H:%M:%S')
+
+unixtime = Decimal(time.mktime(presenttime.timetuple()))
+print("Timestamp = " + str(unixtime))
+ghgBroadcast = ghgBroadcast + str(unixtime)  + ","
+messagelength = messagelength + 4
+
+print("Units of measure = 1")
+ghgBroadcast = ghgBroadcast + "1"  + ","
+messagelength = messagelength + 1
+
+print("Value interval = " + str(interval))
+ghgBroadcast = ghgBroadcast + str(interval)  + ","
+messagelength = messagelength + 1
+
+print("Number of values = " + str(numbervalues))
+ghgBroadcast = ghgBroadcast + str(numbervalues)  + ","
+messagelength = messagelength + 1
+
+detail_list = top_info["ValueInformation"]
+detail_string = json.dumps(detail_list)
+detail_info = json.loads(detail_string)[-1]
+
+strhex = ''
+start = -1
+step = int(Decimal((interval / 5) * -1))
+for i in range(numbervalues):
+    j = start + step*i
+
+    detail_info = json.loads(detail_string)[j]
+    ghg = detail_info["value"]
+
+# g/kwh Co2
+    ghggram = round(Decimal(ghg) * 1000)
+    if(ghggram > 250):
+        ghggram = 251
+    strhex = strhex + format(ghggram, 'x')
+    print(str(ghg) + ", " + str(ghggram) + ", " + format(ghggram, 'x'))
+
+print("GHG values (hex) = " + strhex)
+ghgBroadcast = ghgBroadcast + strhex
+messagelength = messagelength + len(strhex)/2
+
+print("TOTAL LENGTH = " + str(Decimal(messagelength)) + "\n----------")
+
+fileptr = open ("ghgBroadcast_" + RIN3 + "_" + timeforfile + ".csv", "w")
+fileptr.write("RIN Location, Message Type, Timestamp, Units of measure, Value Interval, Number of values, Values\n")
+fileptr.write(ghgBroadcast)
+fileptr.close()
