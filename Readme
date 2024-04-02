@@ -1,3 +1,5 @@
 Readme
 Programs to support MIDAS (Market Informed Demand Automation Server (MIDAS).
 https://midasapi.energy.ca.gov/
+
+1.  Condense - Condense MIDAS into a compact form that can be transmitted over communications links with limited bandwidth
