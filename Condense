@@ -1,5 +1,5 @@
 # This proof-of-concept python program translates the MIDAS GHG values into a condensed form
-# According to MessageSize-6
+# According to MessageSize-7
 
 
 import requests, json, base64, datetime, time
@@ -56,23 +56,6 @@ RIN4 = RINc[RINc.find('-')+1:]
 
 rininputfrommidas = RIN1 + RIN2 + RIN3 + RIN4
 rininputshort = RIN4
-lenshort = len(rininputshort)
-if lenshort >= 8:
-    rininputshort = rininputshort[0:8]
-elif lenshort == 7:
-    rininputshort = " " + rininputshort
-elif lenshort == 6:
-    rininputshort = "  " + rininputshort
-elif lenshort == 5:
-    rininputshort = "   " + rininputshort
-elif lenshort == 4:
-    rininputshort = "    " + rininputshort
-elif lenshort == 3:
-    rininputshort = "     " + rininputshort
-elif lenshort == 2:
-    rininputshort = "      " + rininputshort            
-elif lenshort == 1:
-    rininputshort = "       " + rininputshort
 
 print("RIN = " + rininputfrommidas)
 ghgBroadcast = rininputshort  + ","
@@ -134,5 +117,7 @@ print("TOTAL LENGTH = " + str(Decimal(messagelength)) + "\n----------")
 
 fileptr = open ("ghgBroadcast_" + RIN3 + "_" + timeforfile + ".csv", "w")
 fileptr.write("RIN Location, Message Type, Timestamp, Value Interval, Number of values, Values\n")
+fileptr.write(ghgBroadcast)
+fileptr.close()
 fileptr.write(ghgBroadcast)
 fileptr.close()
