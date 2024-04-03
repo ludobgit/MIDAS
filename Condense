@@ -53,13 +53,31 @@ RIN3 = RINb[0:RINb.find('-')]
 RINc = RINb[RINb.find('-')+1:]
 RIN4 = RINc[RINc.find('-')+1:]
 
-rininputshort = RIN1 + RIN2 + RIN3 + RIN4
+rininputfrommidas = RIN1 + RIN2 + RIN3 + RIN4
+rininputshort = RIN4
+lenshort = len(rininputshort)
+if lenshort >= 8:
+    rininputshort = rininputshort[0:8]
+elif lenshort == 7:
+    rininputshort = " " + rininputshort
+elif lenshort == 6:
+    rininputshort = "  " + rininputshort
+elif lenshort == 5:
+    rininputshort = "   " + rininputshort
+elif lenshort == 4:
+    rininputshort = "    " + rininputshort
+elif lenshort == 3:
+    rininputshort = "     " + rininputshort
+elif lenshort == 2:
+    rininputshort = "      " + rininputshort            
+elif lenshort == 1:
+    rininputshort = "       " + rininputshort
 
-print("RIN = " + rininputshort)
+print("RIN = " + rininputfrommidas)
 ghgBroadcast = rininputshort  + ","
 messagelength = len(rininputshort) + 1
 
-fileptr = open ("ghg_" + rininputshort + "_" + timeforfile + ".txt", "w");
+fileptr = open ("ghg_" + rininputfrommidas + "_" + timeforfile + ".txt", "w");
 fileptr.write(ghg)
 fileptr.close()
 
@@ -78,10 +96,6 @@ unixtime = Decimal(time.mktime(presenttime.timetuple()))
 print("Timestamp = " + str(unixtime))
 ghgBroadcast = ghgBroadcast + str(unixtime)  + ","
 messagelength = messagelength + 4
-
-print("Units of measure = 1")
-ghgBroadcast = ghgBroadcast + "1"  + ","
-messagelength = messagelength + 1
 
 print("Value interval = " + str(interval))
 ghgBroadcast = ghgBroadcast + str(interval)  + ","
@@ -118,6 +132,6 @@ messagelength = messagelength + len(strhex)/2
 print("TOTAL LENGTH = " + str(Decimal(messagelength)) + "\n----------")
 
 fileptr = open ("ghgBroadcast_" + RIN3 + "_" + timeforfile + ".csv", "w")
-fileptr.write("RIN Location, Message Type, Timestamp, Units of measure, Value Interval, Number of values, Values\n")
+fileptr.write("RIN Location, Message Type, Timestamp, Value Interval, Number of values, Values\n")
 fileptr.write(ghgBroadcast)
 fileptr.close()
