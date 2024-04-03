@@ -1,4 +1,5 @@
 # This proof-of-concept python program translates the MIDAS GHG values into a condensed form
+# According to MessageSize-6
 
 
 import requests, json, base64, datetime, time
